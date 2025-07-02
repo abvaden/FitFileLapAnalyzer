@@ -15,4 +15,5 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
   },
+  base: '/FitFileLapAnalyzer'
 })
