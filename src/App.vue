@@ -32,12 +32,6 @@
           <!-- File Upload -->
           <FileUploader />
           
-          <!-- Strava Integration -->
-          <StravaConnector />
-          
-          <!-- Strava Activities -->
-          <StravaActivitySelector />
-          
           <!-- File List -->
           <FileList 
             v-if="fileCount > 0" 
@@ -55,12 +49,12 @@
               </svg>
             </div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">Welcome to Lap Analyzer</h3>
-            <p class="text-gray-500 mb-6">Upload your FIT files or connect to Strava to start analyzing and comparing lap data</p>
+            <p class="text-gray-500 mb-6">Upload your FIT files to start analyzing and comparing lap data</p>
             <div class="text-sm text-gray-400">
               <p>Supported features:</p>
               <ul class="mt-2 space-y-1">
                 <li>• Multiple FIT file loading</li>
-                <li>• Strava activity integration</li>
+                <li>• Custom lap creation and editing</li>
                 <li>• Lap-by-lap comparison</li>
                 <li>• Heart rate, power, cadence analysis</li>
                 <li>• Time difference calculations</li>
@@ -106,8 +100,6 @@ import LapSelector from '@/components/LapSelector.vue';
 import ComparisonChart from '@/components/ComparisonChart.vue';
 import TimeAnalysis from '@/components/TimeAnalysis.vue';
 import ErrorToast from '@/components/ErrorToast.vue';
-import StravaConnector from '@/components/StravaConnector.vue';
-import StravaActivitySelector from '@/components/StravaActivitySelector.vue';
 import LapEditModal from '@/components/LapEditModal.vue';
 
 // Types
