@@ -10,6 +10,7 @@
         v-for="file in files"
         :key="file.id"
         class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200"
+        @click="openLapEditor(file)"
       >
         <!-- File Header -->
         <div class="flex items-center justify-between mb-2">
@@ -18,9 +19,18 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <span class="font-medium text-gray-900 truncate">{{ file.filename }}</span>
+            <button
+              @click.stop="openLapEditor(file)"
+              class="text-gray-400 hover:text-blue-600 transition-colors duration-200"
+              title="Edit laps"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
           </div>
           <button
-            @click="removeFile(file.id)"
+            @click.stop="removeFile(file.id)"
             class="text-gray-400 hover:text-red-600 transition-colors duration-200"
             title="Remove file"
           >
@@ -64,11 +74,11 @@
         </div>
         
         <!-- Laps Preview -->
-        <div class="border-t border-gray-100 pt-3">
+          <div class="border-t border-gray-100 pt-3">
           <div class="flex items-center justify-between mb-2">
             <span class="text-sm font-medium text-gray-700">Laps</span>
             <button
-              @click="toggleLapsExpanded(file.id)"
+              @click.stop="toggleLapsExpanded(file.id)"
               class="text-xs text-primary-600 hover:text-primary-700"
             >
               {{ expandedFiles.has(file.id) ? 'Hide' : 'Show' }} Details
@@ -86,7 +96,7 @@
                   ? 'bg-primary-100 text-primary-800 border border-primary-200'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               ]"
-              @click="toggleLapSelection(lap)"
+              @click.stop="toggleLapSelection(lap)"
             >
               Lap {{ lap.lapNumber }}
             </span>
@@ -109,7 +119,7 @@
                   ? 'bg-primary-50 border-primary-200'
                   : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
               ]"
-              @click="toggleLapSelection(lap)"
+              @click.stop="toggleLapSelection(lap)"
             >
               <div class="flex items-center space-x-3">
                 <span class="font-medium text-sm">Lap {{ lap.lapNumber }}</span>
@@ -159,7 +169,12 @@ import { ref, computed } from 'vue';
 import { useFitFilesStore } from '@/stores/fitFiles';
 import { useComparisonStore } from '@/stores/comparison';
 import { fitParser } from '@/utils/fitParser';
-import type { LapSegment } from '@/types/fitData';
+import type { LapSegment, ParsedFitFile } from '@/types/fitData';
+
+// Emits
+const emit = defineEmits<{
+  'open-lap-editor': [file: ParsedFitFile];
+}>();
 
 // Stores
 const fitFilesStore = useFitFilesStore();
@@ -207,5 +222,9 @@ function formatTime(seconds: number): string {
 
 function formatDistance(meters?: number): string {
   return fitParser.formatDistance(meters);
+}
+
+function openLapEditor(file: ParsedFitFile) {
+  emit('open-lap-editor', file);
 }
 </script>

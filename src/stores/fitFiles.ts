@@ -99,6 +99,81 @@ export const useFitFilesStore = defineStore('fitFiles', () => {
     return laps.value.filter(lap => lap.fileId === fileId);
   }
 
+  async function addStravaActivity(parsedActivity: ParsedFitFile): Promise<void> {
+    try {
+      // Check if activity is already loaded
+      const existingFile = files.value.find(f => f.id === parsedActivity.id);
+      if (existingFile) {
+        throw new Error(`Activity "${parsedActivity.filename}" is already loaded`);
+      }
+
+      // Add to files array
+      files.value.push(parsedActivity);
+
+      // Extract and add laps - we need to create LapSegments from the parsed activity
+      const activityLaps: LapSegment[] = parsedActivity.data.laps.map((lap, index) => ({
+        id: `${parsedActivity.id}_lap_${index + 1}`,
+        fileId: parsedActivity.id,
+        filename: parsedActivity.filename,
+        lapNumber: index + 1,
+        startTime: lap.start_time,
+        endTime: lap.start_time + lap.total_elapsed_time,
+        duration: lap.total_elapsed_time,
+        distance: lap.total_distance,
+        records: parsedActivity.data.records.filter(record => 
+          record.timestamp >= lap.start_time && 
+          record.timestamp <= lap.start_time + lap.total_elapsed_time
+        ),
+        lapData: lap,
+        metadata: {
+          avgHeartRate: lap.avg_heart_rate,
+          maxHeartRate: lap.max_heart_rate,
+          avgPower: lap.avg_power,
+          maxPower: lap.max_power,
+          avgCadence: lap.avg_cadence,
+          maxCadence: lap.max_cadence,
+          avgSpeed: lap.avg_speed,
+          maxSpeed: lap.max_speed,
+          calories: lap.total_calories,
+        }
+      }));
+
+      laps.value.push(...activityLaps);
+
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Unknown error occurred';
+      throw err;
+    }
+  }
+
+  function updateFileLaps(fileId: string, editedLaps: any[]): void {
+    // Remove existing laps for this file
+    laps.value = laps.value.filter(lap => lap.fileId !== fileId);
+    
+    // Convert edited laps to LapSegments and add them
+    const newLaps: LapSegment[] = editedLaps.map((editedLap, index) => ({
+      id: editedLap.id,
+      fileId: editedLap.fileId,
+      filename: editedLap.filename,
+      lapNumber: index + 1, // Renumber sequentially
+      startTime: editedLap.startTime,
+      endTime: editedLap.endTime,
+      duration: editedLap.duration,
+      distance: editedLap.distance,
+      records: editedLap.records,
+      lapData: editedLap.lapData,
+      metadata: editedLap.metadata
+    }));
+    
+    laps.value.push(...newLaps);
+    
+    // Update file metadata
+    const file = files.value.find(f => f.id === fileId);
+    if (file) {
+      file.metadata.lapCount = newLaps.length;
+    }
+  }
+
   function clearError(): void {
     error.value = null;
   }
@@ -118,11 +193,13 @@ export const useFitFilesStore = defineStore('fitFiles', () => {
     // Actions
     addFile,
     addFiles,
+    addStravaActivity,
     removeFile,
     clearAll,
     getFileById,
     getLapById,
     getLapsByFileId,
+    updateFileLaps,
     clearError,
   };
 });
