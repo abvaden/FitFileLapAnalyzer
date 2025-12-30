@@ -92,7 +92,8 @@ export class FitFileParser {
     }
 
     // Calculate metadata
-    const startTime = records.length > 0 ? new Date(records[0].timestamp * 1000) : new Date();
+    const startTimeSeconds = records.length > 0 ? this.getTimestampSeconds(records[0].timestamp) : null;
+    const startTime = startTimeSeconds !== null ? new Date(startTimeSeconds * 1000) : new Date();
     const totalTime = sessions.length > 0 ? sessions[0].total_elapsed_time || 0 : 0;
     const totalDistance = sessions.length > 0 ? sessions[0].total_distance : undefined;
     const sport = sessions.length > 0 ? sessions[0].sport : undefined;
@@ -124,10 +125,9 @@ export class FitFileParser {
     
     return data.laps.map((lap, index) => {
       // Convert Date objects to timestamps for comparison
-      const lapStartTime = typeof lap.start_time === 'object' && lap.start_time && 'getTime' in lap.start_time 
-        ? lap.start_time.getTime() / 1000 
-        : lap.start_time;
-      const lapEndTime = lapStartTime + lap.total_elapsed_time;
+      const lapStartTime = this.getTimestampSeconds(lap.start_time) ?? 0;
+      const lapDuration = typeof lap.total_elapsed_time === 'number' ? lap.total_elapsed_time : 0;
+      const lapEndTime = lapStartTime + lapDuration;
       
       // Filter records for this lap
       const lapRecords = this.filterRecordsByTimeRange(
@@ -143,7 +143,7 @@ export class FitFileParser {
         lapNumber: index + 1,
         startTime: lapStartTime,
         endTime: lapEndTime,
-        duration: lap.total_elapsed_time,
+        duration: lapDuration,
         distance: lap.total_distance,
         records: lapRecords,
         lapData: lap,
@@ -168,12 +168,24 @@ export class FitFileParser {
     endTime: number
   ): FitRecord[] {
     return records.filter((record) => {
-      // Convert record timestamp to seconds if it's a Date object
-      const recordTime = typeof record.timestamp === 'object' && record.timestamp && 'getTime' in record.timestamp
-        ? record.timestamp.getTime() / 1000 
-        : record.timestamp;
+      const recordTime = this.getTimestampSeconds(record.timestamp);
+      if (recordTime === null) return false;
       return recordTime >= startTime && recordTime <= endTime;
     });
+  }
+
+  private getTimestampSeconds(value: unknown): number | null {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    if (value instanceof Date) {
+      return value.getTime() / 1000;
+    }
+    if (typeof value === 'object' && value && 'getTime' in value) {
+      const timeValue = (value as Date).getTime();
+      return Number.isFinite(timeValue) ? timeValue / 1000 : null;
+    }
+    return null;
   }
 
   private generateFileId(filename: string): string {
